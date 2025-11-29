@@ -1,21 +1,36 @@
 # Fetch monthly usage from Unifi controller
 
-The current Unifi Network integration in Home Assistant appears to be missing tracking of monthly WAN usage statistics. This is a simple shell script that fetches the data from the v2 API for Wan 1 and Wan 2 interfaces.
+The current Unifi Network integration in Home Assistant appears to be missing tracking of monthly WAN usage statistics. We pull this using a REST API call.
 
 Output
 ```
-network_name: Primary (WAN1)
+state_class: total_increasing
+isp_name: xxxxxxx
+connection_status:
+  interface_name: ppp0
+  is_active: true
+  state: up
+  up: true
+  uplink_type: wired
 unit_of_measurement: GB
+device_class: data_size
 icon: mdi:wan
-friendly_name: YOUR_ISP_NAME
-state: 900.0
+friendly_name: Primary WAN
 ```
 ```
-network_name: Secondary (WAN2)
+state_class: total_increasing
+isp_name: Unknown ISP
+connection_status:
+  downtime: 999999
+  interface_name: eth7
+  is_active: false
+  state: down
+  up: false
+  uplink_type: wired
 unit_of_measurement: GB
+device_class: data_size
 icon: mdi:wan
-friendly_name: Not Connected
-state: 0.0
+friendly_name: Failover WAN
 ```
 
 
@@ -27,60 +42,17 @@ Generate a fresh API key from `Control Panel > Integrations` or re-use existing 
 
 ## Configuration
 
-### 1. Shell script
-Place `get_udm_monthly_usage.sh` file in `config/scripts/`
+### 1. REST.yaml
+Place `rest.yaml` file in `config/` alongside rest of your yaml files.
 
-* Set your UDM IP and API key in your secrets.yaml file
-* If you do not have or do not want to use secrets.yaml, directly configure the values in the sh file.
+* Configure your API key in your secrets.yaml file
+* If you do not have or do not want to use secrets.yaml, directly set the key in `rest.yaml` file.
 
 e.g (include quotes):
 ```
-UDM_IP="192.168.1.1"
 UDM_API_KEY="12345678"
 ```
 
-### 2. Place command_line file or copy code to wherever you are maintaining command_line scripts
+### 2. Place `template.yaml` file or copy code to wherever you are maintaining sensor configuration
 
-If copying file, place it alongside configuration.yaml or sensor.yaml location.
-
-Ensure command_line.yaml is included in configuration.yaml
-
-
-### 3. Place below sensors in your template.yaml file
-
-```
-- sensor:
-      # WAN1 Usage
-    - name: "{{ (states('sensor.udm_wan_monthly_usage') | from_json).wan1.isp_name }}"
-      unique_id: "udm_wan1_monthly_usage"
-      state: "{{ (states('sensor.udm_wan_monthly_usage') | from_json).wan1.usage_gb | float(0) }}"
-      unit_of_measurement: "GB"
-      icon: mdi:wan
-      attributes:
-        network_name: "{{ (states('sensor.udm_wan_monthly_usage') | from_json).wan1.network_name }}"
-    # WAN2 Usage
-    - name: "{{ (states('sensor.udm_wan_monthly_usage') | from_json).wan2.isp_name }}"
-      unique_id: "udm_wan2_monthly_usage"
-      state: "{{ (states('sensor.udm_wan_monthly_usage') | from_json).wan2.usage_gb | float(0) }}"
-      unit_of_measurement: "GB"
-      icon: mdi:wan
-      attributes:
-        network_name: "{{ (states('sensor.udm_wan_monthly_usage') | from_json).wan2.network_name }}"
-```
-
-### 4. Sample lovelace card
-
-```
-type: gauge
-entity: sensor.udm_wan1_monthly_usage
-max: 3300
-min: 0
-needle: true
-severity:
-  green: 0
-  yellow: 2400
-  red: 3000
-grid_options:
-  columns: 6
-  rows: auto
-```
+### 3. Use your new sensors in dashboard in whatever way you prefer

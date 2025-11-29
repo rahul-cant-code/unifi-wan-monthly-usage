@@ -1,0 +1,29 @@
+- sensor:
+  - name: "Failover WAN"
+    unique_id: wan_failover_usage
+    unit_of_measurement: "GB"
+    icon: mdi:wan
+    state_class: total_increasing
+    device_class: data_size
+    availability: >-
+      {% set wan = state_attr('sensor.udm_raw_data', 'wan') %} {{ wan is not none  and wan.get('wan_details', []) | length > 1 }}
+    state: >-
+      {% set wan = state_attr('sensor.udm_raw_data', 'wan') %} {% if wan and wan.get('wan_details') and wan.wan_details | length > 1 %}
+        {% set bytes = wan.wan_details[1].get('stats', {}).get('monthly_bytes', 0) %}
+        {{ (bytes | float / 1000**3) | round(0) }}
+      {% else %}
+        0
+      {% endif %}
+    attributes:
+      isp_name: >-
+        {% set wan = state_attr('sensor.udm_raw_data', 'wan') %} {% if wan and wan.get('wan_details') and wan.wan_details | length > 1 %}
+          {{ wan.wan_details[1].get('isp', {}).get('name', 'Unknown ISP') }}
+        {% else %}
+          Not Connected
+        {% endif %}
+      connection_status: >-
+        {% set wan = state_attr('sensor.udm_raw_data', 'wan') %} {% if wan and wan.get('wan_details') and wan.wan_details | length > 1 %}
+          {{ wan.wan_details[1].get('status', 'unknown') }}
+        {% else %}
+          disconnected
+        {% endif %}

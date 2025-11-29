@@ -1,0 +1,13 @@
+# rest.yaml
+- resource: "https://192.168.1.1/proxy/network/v2/api/site/default/aggregated-dashboard?historySeconds=864000"
+  verify_ssl: false
+  scan_interval: 3600
+  timeout: 60
+  headers:
+    X-API-KEY: !secret udm_api_key
+    Accept: application/json
+  sensor:
+    - name: "udm_raw_data"
+      value_template: "OK"
+      json_attributes:
+        - wan
